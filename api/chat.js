@@ -1,5 +1,4 @@
 export default async function handler(req, res) {
-  // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -8,26 +7,23 @@ export default async function handler(req, res) {
 
   try {
     const { messages, systemPrompt } = req.body;
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        'HTTP-Referer': 'https://matiasezequielpereira4340-sudo.github.io',
-        'X-Title': 'ImportAR - Innovasmart'
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'meta-llama/llama-3.3-8b-instruct:free',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 1000,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          ...messages
-        ]
+        system: systemPrompt,
+        messages: messages
       })
     });
     const data = await response.json();
-    const reply = data.choices?.[0]?.message?.content;
-    if (!reply) return res.status(500).json({ error: 'No response from AI' });
+    const reply = data.content?.[0]?.text;
+    if (!reply) return res.status(500).json({ error: JSON.stringify(data) });
     res.status(200).json({ reply });
   } catch (e) {
     res.status(500).json({ error: e.message });
